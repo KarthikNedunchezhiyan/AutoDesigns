@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        body{
+            padding: 0px;
+            margin: 0px;
+            background-color: #F1F1F2;
+        }
+        #container{
+            position: relative;
+            left: 50%;
+            transform: translate(-15%);
+        }
+    </style>
+</head>
+
+<body>
+<div id="container"></div>
+
+<script>
+    class Pixel{
+        constructor(i,j,blocksize,init){
+            this.value = init;
+            this.target = document.createElement("div");
+            this.target.style.position = "absolute";
+            this.target.style.top = i*blocksize+"px";
+            this.target.style.left = j*blocksize+"px";
+            this.target.style.height = blocksize+"px";
+            this.target.style.width = blocksize+"px";
+            document.getElementById("container").appendChild(this.target);
+        }
+        applyColour(colours){
+            this.target.style.backgroundColor = (this.value<colours.length)?colours[this.value]:colours[colours.length-1];
+        }
+    }
+
+    function createPixelMat(row,col,blocksize,init){
+        let mat = new Array(row);
+        for(let i=0;i<row;i++) {
+            mat[i] = new Array(col);
+            for(let j=0;j<col;j++)
+                mat[i][j] = new Pixel(i,j,blocksize,init);
+        }
+        return mat;
+    }
+
+    class Board{
+        constructor(row,col,blocksize,init,threshold,maxlevel,colours,center){
+            this.center = center;
+            this.row = row;
+            this.col = col;
+            this.threshold = threshold;
+            this.maxlevel = maxlevel;
+            this.colours = colours;
+            this.board = createPixelMat(row,col,blocksize,init);
+        }
+        check(){
+            for(let i=0;i<this.row;i++)
+                for(let j=0;j<this.col;j++)
+                    this.recurse(i,j,0);
+        }
+        paint(){
+            for(let i=0;i<this.row;i++)
+                for(let j=0;j<this.col;j++)
+                    this.board[i][j].applyColour(this.colours);
+        }
+        recurse(i,j,level){
+            if(i<0 || j<0 || i>=this.row || j>=this.col || level>this.maxlevel || this.board[i][j].value<=this.threshold)
+                return;
+            this.board[i][j].value-=4;
+            this.alterSurround(i+1,j);
+            this.alterSurround(i,j+1);
+            this.alterSurround(i-1,j);
+            this.alterSurround(i,j-1);
+            this.recurse(this.center[0]+this.center[0]-i,this.center[1]+this.center[1]-j,level+1);
+            this.recurse(this.center[0]-this.center[0]-i,this.center[1]-this.center[1]-j,level+1);
+            this.recurse(this.center[0]-this.center[1]-j,this.center[1]+this.center[0]-i,level+1);
+            this.recurse(this.center[0]+this.center[1]-j,this.center[1]-this.center[0]-i,level+1);
+        }
+        alterSurround(i,j){
+            if(i<0 || j<0 || i>=this.row || j>=this.col)
+                return;
+            this.board[i][j].value+=1;
+        }
+    }
+
+
+    let row = 150;
+    let col = 150;
+    let blocksize = 3;
+    let threshold = 3;
+    let init = 0;
+    let initHeap = 50000;
+    let maxlevel = 1;
+    let speed = 1;
+    let colours = ["#F1F1F2","#FB6542","#FFBB00","#5D535E"];
+
+    let center = [Math.floor(row/2),Math.floor(col/2)];
+    let board = new Board(row,col,blocksize,init,threshold,maxlevel,colours,center);
+    board.board[center[0]][center[1]].value = initHeap;
+
+    let interval = setInterval(function () {
+        board.check();
+        board.paint();
+    },speed);
+</script>
+</body>
+</html>
